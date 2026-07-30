@@ -8,28 +8,42 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Budget Tracker">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#10161c">
+<meta name="theme-color" content="#eef2ef">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-  html, body { margin: 0; padding: 0; background: #10161c; }
+  html, body { margin: 0; padding: 0; background: #eef2ef; }
 
   #ledger-root {
-    --bg: #10161c;
-    --panel: #171f27;
-    --panel-2: #1d2631;
-    --paper: #f3efe6;
-    --paper-ink: #2a251c;
-    --paper-line: #ddd5c2;
-    --ink: #e9ebe6;
-    --ink-dim: #8e99a3;
-    --ink-faint: #5c6670;
-    --teal: #3fbf8f;
-    --teal-dim: #2c8a68;
-    --gold: #d8a23b;
-    --clay: #c1614c;
-    --line: #2a333d;
+    --bg: #eef2ef;
+    --panel: #ffffff;
+    --panel-2: #cfe6d3;
+    --paper-ink: #241f18;
+    --paper-line: #d9ded9;
+    --ink: #1c2420;
+    --ink-dim: #58635d;
+    --ink-faint: #838d87;
+    --teal: #1f8f68;
+    --teal-dim: #17714f;
+    --gold: #a9761f;
+    --clay: #b3402c;
+    --line: #d9ded9;
     --radius: 10px;
+
+    --income-bg: #dfeaf6;
+    --income-border: #b9d2e8;
+    --income-line: #c7dced;
+    --income-chip-bg: #cfe0f0;
+
+    --expense-bg: #fbe1de;
+    --expense-border: #edbdb7;
+    --expense-line: #f0c9c4;
+    --expense-chip-bg: #f6cdc8;
+
+    --savings-bg: #dcefe0;
+    --savings-border: #bcdcc2;
+    --savings-line: #c9e3cd;
+
     font-family: 'Inter', sans-serif;
     color: var(--ink);
     background: var(--bg);
@@ -61,7 +75,7 @@
     gap: 8px;
     margin-bottom: 6px;
   }
-  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 8px var(--teal); }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
 
   h1.title {
     font-family: 'Fraunces', serif;
@@ -79,17 +93,14 @@
   }
 
   /* Stat row */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 28px;
-  }
   .stat-card {
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 16px 18px;
+  }
+  .standalone-stat {
+    margin: 36px 0 0;
   }
   .stat-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -107,6 +118,7 @@
   }
   .stat-value.income { color: var(--teal); }
   .stat-value.out { color: var(--clay); }
+  .stat-value.savings { color: var(--teal-dim); }
   .stat-value.net.positive { color: var(--gold); }
   .stat-value.net.negative { color: var(--clay); }
   .stat-input {
@@ -135,33 +147,51 @@
     font-size: 11px;
     color: var(--ink-faint);
   }
+  .section-head-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-faint);
+    font-size: 15px;
+    line-height: 1;
+    padding: 2px 2px;
+    transition: color 0.15s, transform 0.2s;
+  }
+  .settings-btn:hover { color: var(--teal); }
+  .settings-btn.active { color: var(--teal); transform: rotate(35deg); }
 
-  /* Expense ledger — paper panel */
+  /* Ledger panels — tinted per section */
   .ledger-paper {
-    background: var(--paper);
     color: var(--paper-ink);
     border-radius: var(--radius);
     padding: 6px 20px 16px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   }
+  .income-paper { background: var(--income-bg); }
+  .expense-paper { background: var(--expense-bg); }
   .ledger-row {
     display: grid;
-    grid-template-columns: 1fr 130px 120px 28px;
+    grid-template-columns: 1fr 34px 120px;
     gap: 10px;
     align-items: center;
     padding: 11px 0;
-    border-bottom: 1px solid var(--paper-line);
+    background: var(--expense-bg);
+    position: relative;
   }
   .ledger-row.head {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9c9280;
-    border-bottom: 1px solid var(--paper-line);
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--expense-line);
     padding-top: 14px;
   }
-  .ledger-row:last-of-type { border-bottom: none; }
   .ledger-row input[type="text"], .ledger-row input[type="number"] {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
@@ -173,25 +203,70 @@
     padding: 4px 2px;
     border-bottom: 1px dashed transparent;
   }
-  .ledger-row input:focus { border-bottom: 1px dashed #b0a488; }
+  .ledger-row input:focus { border-bottom: 1px dashed var(--expense-border); }
   .ledger-row .amt { font-family: 'IBM Plex Mono', monospace; text-align: right; }
   .cat-select {
     font-family: 'Inter', sans-serif;
     font-size: 12.5px;
-    background: #eae4d5;
-    border: 1px solid var(--paper-line);
+    background: var(--income-chip-bg);
+    border: 1px solid var(--income-border);
     border-radius: 6px;
     padding: 5px 8px;
     color: var(--paper-ink);
     outline: none;
   }
-  .del-btn {
-    background: none; border: none; cursor: pointer;
-    color: #a99a80; font-size: 16px; line-height: 1;
-    padding: 4px;
-    transition: color 0.15s;
+  .cat-swatch {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.15);
+    padding: 0;
+    margin: 0 auto;
+    display: block;
+    cursor: pointer;
+    color: transparent;
+    text-indent: -9999px;
+    outline: none;
   }
-  .del-btn:hover { color: var(--clay); }
+  .cat-swatch option {
+    color: var(--paper-ink);
+    text-indent: 0;
+  }
+  .cat-cell { display: flex; align-items: center; justify-content: center; }
+
+  /* Swipe-to-delete: red reveal sits behind the row, uncovered as it slides left */
+  .swipe-wrap {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .swipe-wrap:last-of-type { border-bottom: none; }
+  .income-swipe-wrap { border-bottom-color: var(--income-line); }
+  .expense-swipe-wrap { border-bottom-color: var(--expense-line); }
+  .swipe-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--clay);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 18px;
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .vault-swipe-wrap {
+    border-bottom: none;
+    border-radius: var(--radius);
+  }
+  .vault-swipe-wrap .swipe-bg {
+    border-radius: var(--radius);
+  }
 
   /* Currency prefix adornment for amount inputs */
   .currency-input { position: relative; }
@@ -204,26 +279,27 @@
     font-family: 'IBM Plex Mono', monospace;
     pointer-events: none;
   }
-  .currency-input.on-paper .prefix { color: #9c9280; font-size: 13px; }
+  .currency-input.on-paper .prefix { color: var(--ink-faint); font-size: 13px; }
   .currency-input.on-dark .prefix { color: var(--ink-faint); font-size: 12.5px; }
   .ledger-row .currency-input.on-paper .prefix { left: 6px; }
   .ledger-row .currency-input.on-paper input[type="number"] { padding-left: 18px !important; }
 
   /* Category manager chips */
   .cat-manager {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: 8px;
     padding: 14px 0 14px;
-    border-bottom: 1px solid var(--paper-line);
+    border-bottom: 1px solid var(--expense-line);
     margin-bottom: 2px;
   }
+  .cat-manager.open { display: flex; }
   .cat-chip {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #eae4d5;
-    border: 1px solid var(--paper-line);
+    background: var(--expense-chip-bg);
+    border: 1px solid var(--expense-border);
     border-radius: 999px;
     padding: 4px 6px 4px 10px;
   }
@@ -240,19 +316,19 @@
   }
   .cat-chip .cat-remove {
     background: none; border: none; cursor: pointer;
-    color: #a99a80; font-size: 12px; line-height: 1;
+    color: #a67d76; font-size: 12px; line-height: 1;
     padding: 2px 4px;
   }
   .cat-chip .cat-remove:hover { color: var(--clay); }
   .add-cat-chip {
     display: flex; align-items: center;
     background: none;
-    border: 1px dashed #b0a488;
+    border: 1px dashed var(--expense-border);
     border-radius: 999px;
     padding: 5px 12px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11.5px;
-    color: #6b6350;
+    color: #9c5f56;
     cursor: pointer;
   }
   .add-cat-chip:hover { border-color: var(--teal-dim); color: var(--teal-dim); }
@@ -262,20 +338,35 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     background: none;
-    border: 1px dashed #b0a488;
+    border: 1px dashed var(--ink-faint);
     border-radius: 6px;
-    color: #6b6350;
+    color: var(--ink-dim);
     padding: 8px 14px;
     cursor: pointer;
     width: 100%;
     transition: all 0.15s;
   }
-  .add-row-btn:hover { border-color: var(--teal-dim); color: var(--teal-dim); background: rgba(63,191,143,0.06); }
+  .add-row-btn:hover { border-color: var(--teal-dim); color: var(--teal-dim); background: rgba(23,113,79,0.07); }
+
+  .reset-income-btn {
+    display: block;
+    margin: 10px auto 2px;
+    background: none;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .reset-income-btn:hover { color: var(--clay); }
+  .reset-income-btn.confirming { color: var(--clay); font-weight: 600; }
 
   .empty-note {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
-    color: #9c9280;
+    color: var(--ink-faint);
     padding: 16px 0;
     text-align: center;
   }
@@ -283,9 +374,9 @@
   /* Income ledger — entries with variable fields */
   .income-entry {
     padding: 13px 0;
-    border-bottom: 1px solid var(--paper-line);
+    background: var(--income-bg);
+    position: relative;
   }
-  .income-entry:last-of-type { border-bottom: none; }
   .income-top {
     display: flex;
     align-items: center;
@@ -305,12 +396,12 @@
     padding: 3px 2px;
     border-bottom: 1px dashed transparent;
   }
-  .income-name-input:focus { border-bottom: 1px dashed #b0a488; }
+  .income-name-input:focus { border-bottom: 1px dashed var(--income-border); }
   .income-computed {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 14.5px;
     font-weight: 600;
-    color: #1f7a5c;
+    color: var(--teal-dim);
     white-space: nowrap;
     min-width: 64px;
     text-align: right;
@@ -327,29 +418,30 @@
     font-size: 9.5px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9c9280;
+    color: var(--ink-faint);
     margin-bottom: 5px;
   }
   .income-fields input {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13.5px;
-    background: #eae4d5;
-    border: 1px solid var(--paper-line);
+    background: var(--income-chip-bg);
+    border: 1px solid var(--income-border);
     border-radius: 6px;
     color: var(--paper-ink);
     padding: 7px 9px;
     width: 100%;
     outline: none;
   }
-  .income-fields input:focus { border-color: #1f7a5c; }
+  .income-fields input:focus { border-color: var(--teal-dim); }
 
   /* Savings vaults */
   .vault-grid { display: flex; flex-direction: column; gap: 12px; }
   .vault-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: var(--savings-bg);
+    border: 1px solid var(--savings-border);
     border-radius: var(--radius);
     padding: 18px 20px;
+    position: relative;
   }
   .vault-top {
     display: flex;
@@ -391,7 +483,7 @@
   .ruler-ticks {
     position: absolute; inset: 0;
     background-image: repeating-linear-gradient(
-      90deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px,
+      90deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 1px,
       transparent 1px, transparent 10%
     );
   }
@@ -401,7 +493,7 @@
     border-radius: 5px 0 0 5px;
     transition: width 0.3s ease;
   }
-  .ruler-fill.over { background: linear-gradient(90deg, var(--gold), #e8c06a); }
+  .ruler-fill.over { background: linear-gradient(90deg, var(--gold), #c99a3f); }
 
   .vault-figures {
     display: grid;
@@ -440,7 +532,7 @@
     transition: transform 0.15s, background 0.15s;
   }
   .isa-toggle input:checked + .isa-switch {
-    background: rgba(63, 191, 143, 0.25);
+    background: rgba(31, 143, 104, 0.22);
     border-color: var(--teal-dim);
   }
   .isa-toggle input:checked + .isa-switch::after {
@@ -466,7 +558,7 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 14px;
     background: var(--panel-2);
-    border: 1px solid var(--line);
+    border: 1px solid var(--savings-border);
     border-radius: 6px;
     color: var(--ink);
     padding: 7px 9px;
@@ -484,19 +576,12 @@
     color: var(--ink-dim);
   }
   .vault-eta.done { color: var(--teal); }
-  .vault-remove {
-    background: none; border: none; cursor: pointer;
-    color: var(--ink-faint); font-size: 11px;
-    font-family: 'IBM Plex Mono', monospace;
-    padding: 2px 0;
-  }
-  .vault-remove:hover { color: var(--clay); }
 
   .add-vault-btn {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     background: none;
-    border: 1px dashed var(--line);
+    border: 1px dashed var(--savings-border);
     border-radius: var(--radius);
     color: var(--ink-faint);
     padding: 12px 14px;
@@ -514,8 +599,8 @@
     align-items: center;
     padding: 12px 16px;
     border-radius: var(--radius);
-    background: var(--panel);
-    border: 1px solid var(--line);
+    background: var(--savings-bg);
+    border: 1px solid var(--savings-border);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
   }
@@ -544,12 +629,11 @@
     font-size: 10.5px;
   }
   .reset-btn:hover { color: var(--clay); }
+  .reset-btn.confirming { color: var(--clay); font-weight: 600; }
 
   @media (max-width: 560px) {
-    .stats { grid-template-columns: 1fr; }
     .vault-figures { grid-template-columns: 1fr; }
-    .ledger-row { grid-template-columns: 1fr 100px 28px; }
-    .ledger-row .cat-cell { display: none; }
+    .ledger-row { grid-template-columns: 1fr 28px 100px; }
     .income-computed { min-width: auto; }
   }
 </style>
@@ -558,45 +642,49 @@
 
 <div id="ledger-root">
   <div class="wrap">
-    <div class="eyebrow"><span class="dot"></span>LEDGER · MONTHLY</div>
+    <div class="eyebrow"><span class="dot"></span>MONTHLY LEDGER</div>
     <h1 class="title">Budget &amp; Savings Vaults</h1>
     <div class="subtitle" id="today-label">loading…</div>
 
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-label">Income</div>
-        <div class="stat-value income" id="income-total">£0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Outgoings</div>
-        <div class="stat-value out" id="out-total">£0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Left to save</div>
-        <div class="stat-value net" id="net-total">£0</div>
-      </div>
+    <div class="stat-card standalone-stat">
+      <div class="stat-label">Total income</div>
+      <div class="stat-value income" id="income-total">£0.00</div>
     </div>
 
     <div class="section-head">
       <div class="section-title">Income ledger</div>
       <div class="section-note" id="income-count">0 sources</div>
     </div>
-    <div class="ledger-paper">
+    <div class="ledger-paper income-paper">
       <div id="income-rows"></div>
       <button class="add-row-btn" id="add-income">+ add income</button>
+      <button class="reset-income-btn" id="reset-income">reset</button>
+    </div>
+
+    <div class="stat-card standalone-stat">
+      <div class="stat-label">Total expense</div>
+      <div class="stat-value out" id="out-total">£0.00</div>
     </div>
 
     <div class="section-head">
       <div class="section-title">Expense ledger</div>
-      <div class="section-note" id="expense-count">0 lines</div>
+      <div class="section-head-right">
+        <div class="section-note" id="expense-count">0 costs</div>
+        <button class="settings-btn" id="cat-settings-toggle" title="Manage categories" aria-label="Manage categories">⚙</button>
+      </div>
     </div>
-    <div class="ledger-paper">
+    <div class="ledger-paper expense-paper">
       <div class="cat-manager" id="cat-manager"></div>
       <div class="ledger-row head">
-        <div>Item</div><div>Category</div><div style="text-align:right">Amount</div><div></div>
+        <div>Item</div><div></div><div style="text-align:right">Amount</div>
       </div>
       <div id="ledger-rows"></div>
       <button class="add-row-btn" id="add-expense">+ add line</button>
+    </div>
+
+    <div class="stat-card standalone-stat">
+      <div class="stat-label">Savings</div>
+      <div class="stat-value savings" id="savings-total">£0.00</div>
     </div>
 
     <div class="section-head">
@@ -606,14 +694,14 @@
     <div class="vault-grid" id="vault-grid"></div>
     <button class="add-vault-btn" id="add-vault" style="margin-top:12px;">+ add account</button>
 
-    <div class="alloc-strip" style="margin-top:12px;">
+    <div class="alloc-strip" id="isa-strip" style="margin-top:12px;">
       <span class="label">ISA contributions this tax year</span>
       <span class="val" id="isa-val">£0 of £20,000 ISA allowance used</span>
     </div>
 
-    <div class="alloc-strip">
-      <span class="label">Monthly contributions committed</span>
-      <span class="val" id="alloc-val">£0 of £0 left to save</span>
+    <div class="stat-card standalone-stat">
+      <div class="stat-label">Leftover</div>
+      <div class="stat-value net" id="leftover-total">£0.00</div>
     </div>
 
     <div class="footer">
@@ -626,19 +714,25 @@
 <script>
 (function() {
   const CAT_PALETTE = ["#c1614c", "#3fbf8f", "#5b8fd8", "#d8a23b", "#a97fd8", "#4fb0c6", "#e08a4f", "#7fae5f"];
+  function getCategoryColor(catName) {
+    const idx = data.categories.indexOf(catName);
+    return idx >= 0 ? CAT_PALETTE[idx % CAT_PALETTE.length] : "#9c9280";
+  }
   const STORAGE_KEY = "budget-tracker-v1";
 
   const defaultData = {
     incomes: [
-      { id: "inc1", source: "Door supervisor shifts", type: "hourly", amount: 0, hours: 0, rate: 0 }
+      { id: "inc1", source: "Income 1", type: "hourly", amount: 0, hours: 0, rate: 0 }
     ],
-    expenses: [],
+    expenses: [
+      { id: "exp1", name: "", category: "Housing", amount: 0 }
+    ],
     categories: ["Housing", "Food", "Transport", "Subscriptions", "Fun", "Other"],
     accounts: [
-      { id: "acc1", name: "Trading 212 Cash ISA", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 },
-      { id: "acc2", name: "Marcus", current: 0, target: 0, monthly: 0, isISA: false, taxYearContrib: 0 },
-      { id: "acc3", name: "Moneybox LISA", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 },
-      { id: "acc4", name: "S&S ISA", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 }
+      { id: "acc1", name: "Account 1", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 },
+      { id: "acc2", name: "Account 2", current: 0, target: 0, monthly: 0, isISA: false, taxYearContrib: 0 },
+      { id: "acc3", name: "Account 3", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 },
+      { id: "acc4", name: "Account 4", current: 0, target: 0, monthly: 0, isISA: true, taxYearContrib: 0 }
     ]
   };
 
@@ -647,17 +741,103 @@
 
   const $ = (sel) => document.querySelector(sel);
   function fmt(n) {
-    // round to at most 2dp (kills floating point noise) but never forces integers to become whole numbers artificially
+    // always show exactly 2dp, accounting-style, even for whole numbers
     const num = Math.round((Number(n) || 0) * 100) / 100;
-    const hasCents = Math.abs(num - Math.round(num)) > 0.001;
     return "£" + num.toLocaleString("en-GB", {
-      minimumFractionDigits: hasCents ? 2 : 0,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   }
   const uid = () => Math.random().toString(36).slice(2, 9);
 
+  // Native confirm()/alert() dialogs can be blocked in sandboxed embeds, so destructive
+  // actions arm on first tap (button shows a warning state) and fire on a second tap.
+  function armOnTap(btn, originalLabel, confirmLabel, action) {
+    let armed = false;
+    let timer = null;
+    const disarm = () => {
+      armed = false;
+      clearTimeout(timer);
+      btn.textContent = originalLabel;
+      btn.classList.remove("confirming");
+    };
+    btn.addEventListener("click", () => {
+      if (!armed) {
+        armed = true;
+        btn.textContent = confirmLabel;
+        btn.classList.add("confirming");
+        timer = setTimeout(disarm, 3000);
+      } else {
+        disarm();
+        action();
+      }
+    });
+  }
+
   function setSavedLabel(text) { $("#saved-label").textContent = text; }
+
+  // Swipe-left-to-delete: works for touch and mouse drag alike via Pointer Events.
+  // A quick tap still passes through to inputs/selects normally, since we only
+  // hijack the gesture once movement is clearly horizontal.
+  function makeSwipeToDelete(el, onDelete) {
+    let startX = 0, startY = 0, dx = 0;
+    let dragging = false, locked = false, isHorizontal = false;
+    const THRESHOLD = 80;
+
+    el.style.touchAction = "pan-y";
+
+    el.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      locked = false;
+      isHorizontal = false;
+      dx = 0;
+      startX = e.clientX;
+      startY = e.clientY;
+      el.style.transition = "none";
+    });
+
+    el.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const moveX = e.clientX - startX;
+      const moveY = e.clientY - startY;
+      if (!locked) {
+        if (Math.abs(moveX) > 8 || Math.abs(moveY) > 8) {
+          locked = true;
+          isHorizontal = Math.abs(moveX) > Math.abs(moveY);
+          if (isHorizontal && document.activeElement && document.activeElement !== document.body) {
+            document.activeElement.blur();
+          }
+        } else {
+          return;
+        }
+      }
+      if (!isHorizontal) return;
+      e.preventDefault();
+      dx = Math.min(0, moveX);
+      el.style.transform = `translateX(${dx}px)`;
+      el.style.opacity = String(Math.max(0.3, 1 - Math.abs(dx) / 250));
+    });
+
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      if (isHorizontal && dx < -THRESHOLD) {
+        el.style.transition = "transform 0.18s ease, opacity 0.18s ease";
+        el.style.transform = "translateX(-100%)";
+        el.style.opacity = "0";
+        setTimeout(onDelete, 170);
+      } else if (isHorizontal) {
+        el.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+        el.style.transform = "translateX(0)";
+        el.style.opacity = "1";
+      }
+      locked = false;
+      isHorizontal = false;
+    };
+
+    el.addEventListener("pointerup", endDrag);
+    el.addEventListener("pointercancel", endDrag);
+  }
 
   async function loadData() {
     try {
@@ -711,18 +891,21 @@
     const income = data.incomes.reduce((s, r) => s + computeIncomeRow(r), 0);
     const out = data.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
     const net = income - out;
-    return { income, out, net };
+    const savings = data.accounts.reduce((s, a) => s + (Number(a.monthly) || 0), 0);
+    const leftover = net - savings;
+    return { income, out, net, savings, leftover };
   }
 
   function renderStats() {
-    const { income, out, net } = totals();
+    const { income, out, savings, leftover } = totals();
     $("#income-total").textContent = fmt(income);
     $("#out-total").textContent = fmt(out);
-    const netEl = $("#net-total");
-    netEl.textContent = net < 0 ? "(" + fmt(Math.abs(net)) + ")" : fmt(net);
-    netEl.classList.remove("positive", "negative");
-    netEl.classList.add(net >= 0 ? "positive" : "negative");
-    $("#expense-count").textContent = data.expenses.length + (data.expenses.length === 1 ? " line" : " lines");
+    $("#savings-total").textContent = fmt(savings);
+    const leftoverEl = $("#leftover-total");
+    leftoverEl.textContent = leftover < 0 ? "(" + fmt(Math.abs(leftover)) + ")" : fmt(leftover);
+    leftoverEl.classList.remove("positive", "negative");
+    leftoverEl.classList.add(leftover >= 0 ? "positive" : "negative");
+    $("#expense-count").textContent = data.expenses.length + (data.expenses.length === 1 ? " cost" : " costs");
     $("#income-count").textContent = data.incomes.length + (data.incomes.length === 1 ? " source" : " sources");
   }
 
@@ -742,13 +925,12 @@
       const isHourly = row.type === "hourly";
       entry.innerHTML = `
         <div class="income-top">
-          <input type="text" class="income-name-input" value="${escapeAttr(row.source)}" placeholder="e.g. Door supervisor shifts" data-role="source" />
+          <input type="text" class="income-name-input" value="${escapeAttr(row.source)}" placeholder="e.g. Income 1" data-role="source" />
           <select class="cat-select" data-role="type">
             <option value="fixed" ${!isHourly ? "selected" : ""}>Fixed</option>
             <option value="hourly" ${isHourly ? "selected" : ""}>Hourly</option>
           </select>
           <div class="income-computed">${fmt(computeIncomeRow(row))}</div>
-          <button class="del-btn" data-role="delete" title="remove">✕</button>
         </div>
         <div class="income-fields">
           ${isHourly ? `
@@ -777,35 +959,39 @@
       });
       entry.querySelector('[data-role="type"]').addEventListener("change", (e) => {
         row.type = e.target.value;
-        renderIncomes(); renderStats(); renderAllocStrip(); scheduleSave();
+        renderIncomes(); renderStats(); scheduleSave();
       });
       const amountInput = entry.querySelector('[data-role="amount"]');
       if (amountInput) {
         amountInput.addEventListener("input", (e) => {
           row.amount = parseFloat(e.target.value) || 0;
-          refreshComputed(); renderStats(); renderAllocStrip(); scheduleSave();
+          refreshComputed(); renderStats(); scheduleSave();
         });
       }
       const hoursInput = entry.querySelector('[data-role="hours"]');
       if (hoursInput) {
         hoursInput.addEventListener("input", (e) => {
           row.hours = parseFloat(e.target.value) || 0;
-          refreshComputed(); renderStats(); renderAllocStrip(); scheduleSave();
+          refreshComputed(); renderStats(); scheduleSave();
         });
       }
       const rateInput = entry.querySelector('[data-role="rate"]');
       if (rateInput) {
         rateInput.addEventListener("input", (e) => {
           row.rate = parseFloat(e.target.value) || 0;
-          refreshComputed(); renderStats(); renderAllocStrip(); scheduleSave();
+          refreshComputed(); renderStats(); scheduleSave();
         });
       }
-      entry.querySelector('[data-role="delete"]').addEventListener("click", () => {
+      makeSwipeToDelete(entry, () => {
         data.incomes = data.incomes.filter(x => x.id !== row.id);
-        renderIncomes(); renderStats(); renderAllocStrip(); scheduleSave();
+        renderIncomes(); renderStats(); scheduleSave();
       });
 
-      container.appendChild(entry);
+      const wrap = document.createElement("div");
+      wrap.className = "swipe-wrap income-swipe-wrap";
+      wrap.innerHTML = '<div class="swipe-bg">Delete</div>';
+      wrap.appendChild(entry);
+      container.appendChild(wrap);
     });
   }
 
@@ -819,34 +1005,40 @@
       container.appendChild(note);
       return;
     }
-    data.expenses.forEach((exp) => {
+    data.expenses.forEach((exp, idx) => {
       const row = document.createElement("div");
       row.className = "ledger-row";
       row.innerHTML = `
-        <input type="text" value="${escapeAttr(exp.name)}" placeholder="e.g. Rent" data-role="name" />
+        <input type="text" value="${escapeAttr(exp.name)}" placeholder="Expense ${idx + 1}" data-role="name" />
         <div class="cat-cell">
-          <select class="cat-select" data-role="category">
+          <select class="cat-swatch" data-role="category" title="${escapeAttr(exp.category)}" style="background-color:${getCategoryColor(exp.category)}">
             ${data.categories.map(c => `<option value="${escapeAttr(c)}" ${c === exp.category ? "selected" : ""}>${c}</option>`).join("")}
           </select>
         </div>
         <div class="currency-input on-paper amt-wrap"><span class="prefix">£</span><input type="number" step="0.01" class="amt" value="${exp.amount || ""}" placeholder="0.00" data-role="amount" /></div>
-        <button class="del-btn" data-role="delete" title="remove">✕</button>
       `;
       row.querySelector('[data-role="name"]').addEventListener("input", (e) => {
         exp.name = e.target.value; scheduleSave();
       });
       row.querySelector('[data-role="category"]').addEventListener("change", (e) => {
-        exp.category = e.target.value; scheduleSave();
+        exp.category = e.target.value;
+        e.target.style.backgroundColor = getCategoryColor(exp.category);
+        e.target.title = exp.category;
+        scheduleSave();
       });
       row.querySelector('[data-role="amount"]').addEventListener("input", (e) => {
         exp.amount = parseFloat(e.target.value) || 0;
         renderStats(); scheduleSave();
       });
-      row.querySelector('[data-role="delete"]').addEventListener("click", () => {
+      makeSwipeToDelete(row, () => {
         data.expenses = data.expenses.filter(x => x.id !== exp.id);
         renderExpenses(); renderStats(); scheduleSave();
       });
-      container.appendChild(row);
+      const wrap = document.createElement("div");
+      wrap.className = "swipe-wrap expense-swipe-wrap";
+      wrap.innerHTML = '<div class="swipe-bg">Delete</div>';
+      wrap.appendChild(row);
+      container.appendChild(wrap);
     });
   }
 
@@ -930,7 +1122,12 @@
     const grid = $("#vault-grid");
     grid.innerHTML = "";
     data.accounts.forEach((acc) => {
-      grid.appendChild(buildVaultCard(acc));
+      const card = buildVaultCard(acc);
+      const wrap = document.createElement("div");
+      wrap.className = "swipe-wrap vault-swipe-wrap";
+      wrap.innerHTML = '<div class="swipe-bg">Delete</div>';
+      wrap.appendChild(card);
+      grid.appendChild(wrap);
     });
   }
 
@@ -945,7 +1142,7 @@
       <label class="isa-toggle">
         <input type="checkbox" data-role="isa" ${acc.isISA ? "checked" : ""} />
         <span class="isa-switch"></span>
-        <span class="isa-label">ISA account</span>
+        <span class="isa-label">ISA</span>
       </label>
       <div class="ruler">
         <div class="ruler-ticks"></div>
@@ -973,7 +1170,6 @@
       </div>
       <div class="vault-bottom">
         <span class="vault-eta">—</span>
-        <button class="vault-remove" data-role="remove">remove account</button>
       </div>
     `;
 
@@ -1015,7 +1211,7 @@
     });
     card.querySelector('[data-role="current"]').addEventListener("input", (e) => {
       acc.current = parseFloat(e.target.value) || 0;
-      updateDerived(); renderAllocStrip(); scheduleSave();
+      updateDerived(); scheduleSave();
     });
     const isaInput = card.querySelector('[data-role="isaContrib"]');
     if (isaInput) {
@@ -1030,17 +1226,21 @@
     });
     card.querySelector('[data-role="monthly"]').addEventListener("input", (e) => {
       acc.monthly = parseFloat(e.target.value) || 0;
-      updateDerived(); renderAllocStrip(); scheduleSave();
+      updateDerived(); renderStats(); scheduleSave();
     });
-    card.querySelector('[data-role="remove"]').addEventListener("click", () => {
+    makeSwipeToDelete(card, () => {
       data.accounts = data.accounts.filter(x => x.id !== acc.id);
-      renderVaults(); renderAllocStrip(); renderIsaStrip(); scheduleSave();
+      renderVaults(); renderStats(); renderIsaStrip(); scheduleSave();
     });
 
     return card;
   }
 
   function renderIsaStrip() {
+    const strip = $("#isa-strip");
+    const hasISA = data.accounts.some((a) => a.isISA);
+    strip.style.display = hasISA ? "flex" : "none";
+    if (!hasISA) return;
     const total = data.accounts.reduce((s, a) => a.isISA ? s + (Number(a.taxYearContrib) || 0) : s, 0);
     const el = $("#isa-val");
     const allowance = 20000;
@@ -1055,21 +1255,6 @@
     }
   }
 
-  function renderAllocStrip() {
-    const committed = data.accounts.reduce((s, a) => s + (Number(a.monthly) || 0), 0);
-    const { net } = totals();
-    const el = $("#alloc-val");
-    const diff = net - committed;
-    el.textContent = fmt(committed) + " of " + fmt(Math.max(net, 0)) + " left to save";
-    el.classList.remove("ok", "warn");
-    el.classList.add(diff >= 0 ? "ok" : "warn");
-    if (diff < 0) {
-      el.textContent += "  ·  " + fmt(Math.abs(diff)) + " over budget";
-    } else if (net > 0) {
-      el.textContent += "  ·  " + fmt(diff) + " unallocated";
-    }
-  }
-
   function renderAll() {
     const now = new Date();
     $("#today-label").textContent = now.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
@@ -1079,12 +1264,16 @@
     renderExpenses();
     renderVaults();
     renderIsaStrip();
-    renderAllocStrip();
   }
 
   $("#add-income").addEventListener("click", () => {
     data.incomes.push({ id: uid(), source: "", type: "fixed", amount: 0, hours: 0, rate: 0 });
-    renderIncomes(); renderStats(); renderAllocStrip(); scheduleSave();
+    renderIncomes(); renderStats(); scheduleSave();
+  });
+
+  armOnTap($("#reset-income"), "reset", "tap again to confirm", () => {
+    data.incomes.forEach((r) => { r.amount = 0; r.hours = 0; });
+    renderIncomes(); renderStats(); scheduleSave();
   });
 
   $("#add-expense").addEventListener("click", () => {
@@ -1092,17 +1281,34 @@
     renderExpenses(); renderStats(); scheduleSave();
   });
 
-  $("#add-vault").addEventListener("click", () => {
-    data.accounts.push({ id: uid(), name: "New account", current: 0, target: 0, monthly: 0, isISA: false, taxYearContrib: 0 });
-    renderVaults(); renderAllocStrip(); renderIsaStrip(); scheduleSave();
+  $("#cat-settings-toggle").addEventListener("click", () => {
+    const panel = $("#cat-manager");
+    const btn = $("#cat-settings-toggle");
+    const isOpen = panel.classList.toggle("open");
+    btn.classList.toggle("active", isOpen);
   });
 
-  $("#reset-btn").addEventListener("click", async () => {
-    if (!confirm("Reset all budget and savings data? This can't be undone.")) return;
+  $("#add-vault").addEventListener("click", () => {
+    data.accounts.push({ id: uid(), name: "New account", current: 0, target: 0, monthly: 0, isISA: false, taxYearContrib: 0 });
+    renderVaults(); renderStats(); renderIsaStrip(); scheduleSave();
+  });
+
+  armOnTap($("#reset-btn"), "reset all data", "tap again to confirm", () => {
     data = JSON.parse(JSON.stringify(defaultData));
     renderAll();
     scheduleSave();
   });
+
+  // Snap any currency input to 2dp once the person finishes editing it (blur doesn't bubble, so use capture)
+  document.getElementById("ledger-root").addEventListener("blur", (e) => {
+    const el = e.target;
+    if (el.matches && el.matches('.currency-input input[type="number"]')) {
+      const val = parseFloat(el.value);
+      if (!isNaN(val)) {
+        el.value = val.toFixed(2);
+      }
+    }
+  }, true);
 
   loadData();
 })();
